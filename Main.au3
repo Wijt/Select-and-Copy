@@ -89,21 +89,45 @@ Func _getDOSOutput($command , $wd='')
     Return StringStripWS($text, 7)
  EndFunc   ;==>_getDOSOutput
 
+Func ASM_Bitmap_Grey_BnW($file, $iBlackAndWhite = 1, $iLight = 125) ;ASM code by AndyG
+    _GDIPlus_Startup()
+    Local $vBmp = _GDIPlus_BitmapCreateFromFile($file)
+    Local $iWidth = _GDIPlus_ImageGetWidth($vBmp)
+    Local $iHeight = _GDIPlus_ImageGetHeight($vBmp)
+    $vBitmap = _GDIPlus_BitmapCloneArea($vBmp, 0, 0, $iWidth, $iHeight)
+    Local $hBitmapData = _GDIPlus_BitmapLockBits($vBitmap, 0, 0, $iWidth, $iHeight, BitOR($GDIP_ILMREAD, $GDIP_ILMWRITE), $GDIP_PXF32RGB)
+    Local $Scan = DllStructGetData($hBitmapData, "Scan0")
+    Local $Stride = DllStructGetData($hBitmapData, "Stride")
+    Local $tPixelData = DllStructCreate("dword[" & (Abs($Stride * $iHeight)) & "]", $Scan)
+    Local $bytecode = "0x8B7C24048B5424088B5C240CB900000000C1E202575352518B040FBA00000000BB00000000B90000000088C2C1E80888C3C1E80888C18B44240883F800772FB85555000001CB01D3F7E3C1E810BB00000000B3FFC1E30888C3C1E30888C3C1E30888C389D8595A5B5F89040FEB3B89C839C3720289D839C2720289D05089F839C3770289D839C2770289D05B01D8BBDC780000F7E3C1E810595A5B5F3B4424107213C7040FFFFFFF0083C10439D1730EE95FFFFFFFC7040F00000000EBEBC3"
+    Local $tCodebuffer = DllStructCreate("byte[" & StringLen($bytecode) / 2 - 1 & "]")
+    Local $Ret = DllStructSetData($tCodebuffer, 1, $bytecode)
+    DllCall("user32.dll", "int", "CallWindowProcW", "ptr", DllStructGetPtr($tCodebuffer), "ptr", DllStructGetPtr($tPixelData), "int", $iWidth * $iHeight, "int", $iBlackAndWhite, "int", $iLight);
+    _GDIPlus_BitmapUnlockBits($vBitmap, $hBitmapData)
+    $tPixelData = 0
+    $tCodebuffer = 0
+    _GDIPlus_ImageSaveToFile($vBitmap, @ScriptDir & "\Rect_BW.jpg")
+    _GDIPlus_BitmapDispose($vBitmap)
+    _GDIPlus_BitmapDispose($vBmp)
+    _GDIPlus_Shutdown()
+EndFunc   ;==>ASM_Bitmap_Grey_BnW
+
 Func CopyFromScreen()
     $coords = Mark_Rect()
     $sBMP_Path = @ScriptDir & "\Rect.bmp"
     _ScreenCapture_Capture($sBMP_Path, $coords[0], $coords[1], $coords[2], $coords[3], False)
+    ; ASM_Bitmap_Grey_BnW($sBMP_Path, 1, 125)
     $text = _getDOSOutput('tesseract.exe '& $sBMP_Path & ' stdout')
     ClipPut($text)
 EndFunc
 
 HotKeySet("{f2}", "CopyFromScreen") ;select and copy f2
 HotKeySet("^!{esc}", "Terminate") ;ctrl+alt+esc close
-
+Press Ctr1+Alt+Break to Restart or Ctr1+BREAK to Stop.
 While 1   
    Sleep(100)
 WEnd
-   
+
 Func Terminate()
     Exit
 EndFunc
