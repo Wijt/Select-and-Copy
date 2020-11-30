@@ -123,7 +123,7 @@ EndFunc
 
 HotKeySet("{f2}", "CopyFromScreen") ;select and copy f2
 HotKeySet("^!{esc}", "Terminate") ;ctrl+alt+esc close
-Press Ctr1+Alt+Break to Restart or Ctr1+BREAK to Stop.
+
 While 1   
    Sleep(100)
 WEnd
